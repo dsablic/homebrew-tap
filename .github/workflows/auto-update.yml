@@ -1,0 +1,168 @@
+name: Auto-update formulas
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+  workflow_dispatch:  # Allow manual trigger
+
+permissions:
+  contents: write
+
+jobs:
+  update-domains:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for new domains release
+        id: check
+        run: |
+          LATEST=$(curl -s https://api.github.com/repos/dsablic/domains-cli/releases/latest | jq -r .tag_name | sed 's/^v//')
+          CURRENT=$(grep 'version "' Formula/domains.rb | sed 's/.*version "\([^"]*\)".*/\1/')
+          echo "latest=$LATEST" >> $GITHUB_OUTPUT
+          echo "current=$CURRENT" >> $GITHUB_OUTPUT
+          if [ "$LATEST" != "$CURRENT" ] && [ -n "$LATEST" ] && [ "$LATEST" != "null" ]; then
+            echo "needs_update=true" >> $GITHUB_OUTPUT
+          else
+            echo "needs_update=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update formula
+        if: steps.check.outputs.needs_update == 'true'
+        env:
+          VERSION: ${{ steps.check.outputs.latest }}
+        run: |
+          curl -sL "https://github.com/dsablic/domains-cli/releases/download/v${VERSION}/checksums.txt" -o checksums.txt
+
+          SHA_DARWIN_ARM64=$(grep "domains-cli_darwin_arm64.tar.gz" checksums.txt | awk '{print $1}')
+          SHA_DARWIN_AMD64=$(grep "domains-cli_darwin_amd64.tar.gz" checksums.txt | awk '{print $1}')
+          SHA_LINUX_ARM64=$(grep "domains-cli_linux_arm64.tar.gz" checksums.txt | awk '{print $1}')
+          SHA_LINUX_AMD64=$(grep "domains-cli_linux_amd64.tar.gz" checksums.txt | awk '{print $1}')
+
+          cat > Formula/domains.rb << FORMULA
+          class Domains < Formula
+            desc "CLI tool to list DNS records from Cloudflare and AWS Route53"
+            homepage "https://github.com/dsablic/domains-cli"
+            version "${VERSION}"
+            license "MIT"
+
+            on_macos do
+              if Hardware::CPU.arm?
+                url "https://github.com/dsablic/domains-cli/releases/download/v${VERSION}/domains-cli_darwin_arm64.tar.gz"
+                sha256 "${SHA_DARWIN_ARM64}"
+              else
+                url "https://github.com/dsablic/domains-cli/releases/download/v${VERSION}/domains-cli_darwin_amd64.tar.gz"
+                sha256 "${SHA_DARWIN_AMD64}"
+              end
+            end
+
+            on_linux do
+              if Hardware::CPU.arm?
+                url "https://github.com/dsablic/domains-cli/releases/download/v${VERSION}/domains-cli_linux_arm64.tar.gz"
+                sha256 "${SHA_LINUX_ARM64}"
+              else
+                url "https://github.com/dsablic/domains-cli/releases/download/v${VERSION}/domains-cli_linux_amd64.tar.gz"
+                sha256 "${SHA_LINUX_AMD64}"
+              end
+            end
+
+            def install
+              bin.install "domains"
+            end
+
+            test do
+              assert_match "Usage", shell_output("#{bin}/domains --help")
+            end
+          end
+          FORMULA
+
+          sed -i 's/^          //' Formula/domains.rb
+          rm checksums.txt
+
+      - name: Commit and push domains
+        if: steps.check.outputs.needs_update == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/domains.rb
+          git commit -m "Update domains to ${{ steps.check.outputs.latest }}"
+          git push
+
+  update-stoptail:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for new stoptail release
+        id: check
+        run: |
+          LATEST=$(curl -s https://api.github.com/repos/dsablic/stoptail/releases/latest | jq -r .tag_name | sed 's/^v//')
+          CURRENT=$(grep 'version "' Formula/stoptail.rb | sed 's/.*version "\([^"]*\)".*/\1/')
+          echo "latest=$LATEST" >> $GITHUB_OUTPUT
+          echo "current=$CURRENT" >> $GITHUB_OUTPUT
+          if [ "$LATEST" != "$CURRENT" ] && [ -n "$LATEST" ] && [ "$LATEST" != "null" ]; then
+            echo "needs_update=true" >> $GITHUB_OUTPUT
+          else
+            echo "needs_update=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update formula
+        if: steps.check.outputs.needs_update == 'true'
+        env:
+          VERSION: ${{ steps.check.outputs.latest }}
+        run: |
+          curl -sL "https://github.com/dsablic/stoptail/releases/download/v${VERSION}/checksums.txt" -o checksums.txt
+
+          SHA_DARWIN_ARM64=$(grep "stoptail_Darwin_arm64.tar.gz" checksums.txt | awk '{print $1}')
+          SHA_DARWIN_AMD64=$(grep "stoptail_Darwin_x86_64.tar.gz" checksums.txt | awk '{print $1}')
+          SHA_LINUX_ARM64=$(grep "stoptail_Linux_arm64.tar.gz" checksums.txt | awk '{print $1}')
+          SHA_LINUX_AMD64=$(grep "stoptail_Linux_x86_64.tar.gz" checksums.txt | awk '{print $1}')
+
+          cat > Formula/stoptail.rb << FORMULA
+          class Stoptail < Formula
+            desc "Elasticsearch TUI - like elasticsearch-head but for your terminal"
+            homepage "https://github.com/dsablic/stoptail"
+            version "${VERSION}"
+            license "MIT"
+
+            on_macos do
+              if Hardware::CPU.arm?
+                url "https://github.com/dsablic/stoptail/releases/download/v${VERSION}/stoptail_Darwin_arm64.tar.gz"
+                sha256 "${SHA_DARWIN_ARM64}"
+              else
+                url "https://github.com/dsablic/stoptail/releases/download/v${VERSION}/stoptail_Darwin_x86_64.tar.gz"
+                sha256 "${SHA_DARWIN_AMD64}"
+              end
+            end
+
+            on_linux do
+              if Hardware::CPU.arm?
+                url "https://github.com/dsablic/stoptail/releases/download/v${VERSION}/stoptail_Linux_arm64.tar.gz"
+                sha256 "${SHA_LINUX_ARM64}"
+              else
+                url "https://github.com/dsablic/stoptail/releases/download/v${VERSION}/stoptail_Linux_x86_64.tar.gz"
+                sha256 "${SHA_LINUX_AMD64}"
+              end
+            end
+
+            def install
+              bin.install "stoptail"
+            end
+
+            test do
+              assert_match "stoptail", shell_output("#{bin}/stoptail --version")
+            end
+          end
+          FORMULA
+
+          sed -i 's/^          //' Formula/stoptail.rb
+          rm checksums.txt
+
+      - name: Commit and push stoptail
+        if: steps.check.outputs.needs_update == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/stoptail.rb
+          git commit -m "Update stoptail to ${{ steps.check.outputs.latest }}"
+          git push
