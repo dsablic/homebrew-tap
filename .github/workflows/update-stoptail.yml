@@ -70,13 +70,8 @@ jobs:
           rm checksums.txt
 
       - name: Commit and push
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Formula/stoptail.rb
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "Update stoptail to ${{ github.event.inputs.version }}"
-            git push
-          fi
+        uses: ./.github/actions/commit-and-push
+        with:
+          file: Formula/stoptail.rb
+          message: "Update stoptail to ${{ github.event.inputs.version }}"
+          skip-if-no-changes: 'true'

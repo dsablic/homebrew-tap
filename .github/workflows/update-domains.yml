@@ -70,13 +70,8 @@ jobs:
           rm checksums.txt
 
       - name: Commit and push
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Formula/domains.rb
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "Update domains to ${{ github.event.inputs.version }}"
-            git push
-          fi
+        uses: ./.github/actions/commit-and-push
+        with:
+          file: Formula/domains.rb
+          message: "Update domains to ${{ github.event.inputs.version }}"
+          skip-if-no-changes: 'true'

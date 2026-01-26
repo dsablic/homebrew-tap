@@ -81,12 +81,10 @@ jobs:
 
       - name: Commit and push domains
         if: steps.check.outputs.needs_update == 'true'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Formula/domains.rb
-          git commit -m "Update domains to ${{ steps.check.outputs.latest }}"
-          git push
+        uses: ./.github/actions/commit-and-push
+        with:
+          file: Formula/domains.rb
+          message: "Update domains to ${{ steps.check.outputs.latest }}"
 
   update-stoptail:
     runs-on: ubuntu-latest
@@ -160,9 +158,7 @@ jobs:
 
       - name: Commit and push stoptail
         if: steps.check.outputs.needs_update == 'true'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Formula/stoptail.rb
-          git commit -m "Update stoptail to ${{ steps.check.outputs.latest }}"
-          git push
+        uses: ./.github/actions/commit-and-push
+        with:
+          file: Formula/stoptail.rb
+          message: "Update stoptail to ${{ steps.check.outputs.latest }}"

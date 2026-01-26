@@ -1,0 +1,31 @@
+name: 'Commit and Push'
+description: 'Commits changes and pushes to the repository with rebase to handle concurrent updates'
+
+inputs:
+  file:
+    description: 'File to stage for commit'
+    required: true
+  message:
+    description: 'Commit message'
+    required: true
+  skip-if-no-changes:
+    description: 'Skip commit if no changes to the staged file'
+    required: false
+    default: 'false'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Commit and push
+      shell: bash
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add "${{ inputs.file }}"
+        if [ "${{ inputs.skip-if-no-changes }}" = "true" ] && git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "${{ inputs.message }}"
+          git pull --rebase
+          git push
+        fi
