@@ -1,26 +1,26 @@
 class Stoptail < Formula
   desc "Elasticsearch TUI - like elasticsearch-head but for your terminal"
   homepage "https://github.com/dsablic/stoptail"
-  version "1.2.1"
+  version "1.2.2"
   license "MIT"
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/dsablic/stoptail/releases/download/v1.2.1/stoptail_Darwin_arm64.tar.gz"
-      sha256 "4157dccba5cf4bebb57bfe8cb2fd37f5df750a0ba8f695745e403f918f755eb8"
+      url "https://github.com/dsablic/stoptail/releases/download/v1.2.2/stoptail_Darwin_arm64.tar.gz"
+      sha256 "91732f20ca11b243f3ee0b706bb088bc7fb288487c88045aba0c2a714c1c2e71"
     else
-      url "https://github.com/dsablic/stoptail/releases/download/v1.2.1/stoptail_Darwin_x86_64.tar.gz"
-      sha256 "ae62f3028f87ad1237cb9e95b810197f8cae784674a7acf773ec49e078db3f12"
+      url "https://github.com/dsablic/stoptail/releases/download/v1.2.2/stoptail_Darwin_x86_64.tar.gz"
+      sha256 "791fdff85c15ea0e19d2a64555c47edccdb32aadf4a2e539c47df3f9d5fac488"
     end
   end
 
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/dsablic/stoptail/releases/download/v1.2.1/stoptail_Linux_arm64.tar.gz"
-      sha256 "cba8f4371a81a60b3b026de773e6b1371ecc264db6290451ee6c6ac533d803fa"
+      url "https://github.com/dsablic/stoptail/releases/download/v1.2.2/stoptail_Linux_arm64.tar.gz"
+      sha256 "eb28dded86b4091c94ec3969af31e514068902525a9d38300c658929dc686ab0"
     else
-      url "https://github.com/dsablic/stoptail/releases/download/v1.2.1/stoptail_Linux_x86_64.tar.gz"
-      sha256 "9861bfd5f079f0c6e972dcfbbd67d11a0d3608d380b2483ac19c92754d16b922"
+      url "https://github.com/dsablic/stoptail/releases/download/v1.2.2/stoptail_Linux_x86_64.tar.gz"
+      sha256 "164b3074b6367859b32c264b641a66fe52ac8057807dc7452e4ea471e5646046"
     end
   end
 
