@@ -86,6 +86,83 @@ jobs:
           file: Formula/domains.rb
           message: "Update domains to ${{ steps.check.outputs.latest }}"
 
+  update-codemium:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for new codemium release
+        id: check
+        run: |
+          LATEST=$(curl -s https://api.github.com/repos/dsablic/codemium/releases/latest | jq -r .tag_name | sed 's/^v//')
+          CURRENT=$(grep 'version "' Formula/codemium.rb | sed 's/.*version "\([^"]*\)".*/\1/')
+          echo "latest=$LATEST" >> $GITHUB_OUTPUT
+          echo "current=$CURRENT" >> $GITHUB_OUTPUT
+          if [ "$LATEST" != "$CURRENT" ] && [ -n "$LATEST" ] && [ "$LATEST" != "null" ]; then
+            echo "needs_update=true" >> $GITHUB_OUTPUT
+          else
+            echo "needs_update=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update formula
+        if: steps.check.outputs.needs_update == 'true'
+        env:
+          VERSION: ${{ steps.check.outputs.latest }}
+        run: |
+          curl -sL "https://github.com/dsablic/codemium/releases/download/v${VERSION}/checksums.txt" -o checksums.txt
+
+          SHA_DARWIN_ARM64=$(grep "codemium_Darwin_arm64.tar.gz" checksums.txt | awk '{print $1}')
+          SHA_DARWIN_AMD64=$(grep "codemium_Darwin_x86_64.tar.gz" checksums.txt | awk '{print $1}')
+          SHA_LINUX_ARM64=$(grep "codemium_Linux_arm64.tar.gz" checksums.txt | awk '{print $1}')
+          SHA_LINUX_AMD64=$(grep "codemium_Linux_x86_64.tar.gz" checksums.txt | awk '{print $1}')
+
+          cat > Formula/codemium.rb << FORMULA
+          class Codemium < Formula
+            desc "Generate code statistics across Bitbucket and GitHub repositories"
+            homepage "https://github.com/dsablic/codemium"
+            version "${VERSION}"
+            license "MIT"
+
+            on_macos do
+              if Hardware::CPU.arm?
+                url "https://github.com/dsablic/codemium/releases/download/v${VERSION}/codemium_Darwin_arm64.tar.gz"
+                sha256 "${SHA_DARWIN_ARM64}"
+              else
+                url "https://github.com/dsablic/codemium/releases/download/v${VERSION}/codemium_Darwin_x86_64.tar.gz"
+                sha256 "${SHA_DARWIN_AMD64}"
+              end
+            end
+
+            on_linux do
+              if Hardware::CPU.arm?
+                url "https://github.com/dsablic/codemium/releases/download/v${VERSION}/codemium_Linux_arm64.tar.gz"
+                sha256 "${SHA_LINUX_ARM64}"
+              else
+                url "https://github.com/dsablic/codemium/releases/download/v${VERSION}/codemium_Linux_x86_64.tar.gz"
+                sha256 "${SHA_LINUX_AMD64}"
+              end
+            end
+
+            def install
+              bin.install "codemium"
+            end
+
+            test do
+              assert_match "codemium", shell_output("#{bin}/codemium --version")
+            end
+          end
+          FORMULA
+
+          sed -i 's/^          //' Formula/codemium.rb
+          rm checksums.txt
+
+      - name: Commit and push codemium
+        if: steps.check.outputs.needs_update == 'true'
+        uses: ./.github/actions/commit-and-push
+        with:
+          file: Formula/codemium.rb
+          message: "Update codemium to ${{ steps.check.outputs.latest }}"
+
   update-stoptail:
     runs-on: ubuntu-latest
     steps:
